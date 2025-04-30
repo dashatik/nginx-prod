@@ -59,6 +59,8 @@ containers:
         mountPath: /etc/nginx/conf.d
     ports:
       - containerPort: 80
+    seccompProfile:
+    type: RuntimeDefault
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
@@ -93,11 +95,12 @@ resources:
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
+ requests:
   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+  memory: 128Mi
+ limits:
+  cpu: 200m
+  memory: 128Mi
 
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 livenessProbe:

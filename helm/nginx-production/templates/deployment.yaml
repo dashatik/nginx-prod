@@ -4,12 +4,6 @@ metadata:
   name: {{ include "nginx-production.fullname" . }}
   labels:
     {{- include "nginx-production.labels" . | nindent 4 }}
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ include "nginx-production.fullname" . }}
-  labels:
-    {{- include "nginx-production.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -36,26 +30,22 @@ spec:
       serviceAccountName: {{ include "nginx-production.serviceAccountName" . }}
       {{- with .Values.podSecurityContext }}
       securityContext:
-      runAsNonRoot: true
+        runAsNonRoot: true
         runAsUser: 1000
         allowPrivilegeEscalation: false
         capabilities:
           drop:
             - ALL
-      {{- toYaml .Values.securityContext | nindent 12 }}
-        {{- toYaml . | nindent 8 }}
+        seccompProfile:
+          type: RuntimeDefault
       {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
-          {{- with .Values.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: nginx-production
+          image: "nginx:latest"
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: 80
               protocol: TCP
           {{- with .Values.livenessProbe }}
           livenessProbe:
@@ -67,7 +57,9 @@ spec:
           {{- end }}
           {{- with .Values.resources }}
           resources:
-            cpu: 100m
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
             {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.volumeMounts }}
@@ -88,10 +80,10 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-            - key: env
-          operator: In
-          values:
-          - production
+                - key: env
+                  operator: In
+                  values:
+                    - production
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
