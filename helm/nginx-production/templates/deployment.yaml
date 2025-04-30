@@ -4,6 +4,12 @@ metadata:
   name: {{ include "nginx-production.fullname" . }}
   labels:
     {{- include "nginx-production.labels" . | nindent 4 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nginx-production.fullname" . }}
+  labels:
+    {{- include "nginx-production.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -28,17 +34,23 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "nginx-production.serviceAccountName" . }}
-      
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        runAsNonRoot: true
+      runAsNonRoot: true
         runAsUser: 1000
         allowPrivilegeEscalation: false
         capabilities:
           drop:
             - ALL
-
+      {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -76,13 +88,12 @@ spec:
             nodeSelectorTerms:
             - matchExpressions:
             - key: env
-              operator: In
-              values:
-              - production
+          operator: In
+          values:
+          - production
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
