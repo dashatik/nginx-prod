@@ -67,6 +67,7 @@ spec:
           {{- end }}
           {{- with .Values.resources }}
           resources:
+            cpu: 100m
             {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.volumeMounts }}
